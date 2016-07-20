@@ -15,65 +15,15 @@
  *
  *)
 
-open Ctypes
-
-module Prefixed_bindings(F: Cstubs.FOREIGN) =
-struct
-  include Unix_dirent_bindings.C(
-    struct
-      include F
-      let foreign f = F.foreign ("unix_dirent_"^ f)
-    end
-    )
-end
-
-type configuration = {
-  errno: Cstubs.errno_policy;
-  concurrency: Cstubs.concurrency_policy;
-  headers: string;
-  bindings: (module Cstubs.BINDINGS);
-  prefix: string;
-}
-
-let standard_configuration = {
-  errno = Cstubs.return_errno;
-  concurrency = Cstubs.sequential;
-  headers = "#include <dirent.h>\n#include \"unix_dirent_util.h\"";
-  bindings = (module Prefixed_bindings);
-  prefix = "unix_dirent_";
-}
-
-let lwt_configuration = {
-  errno = Cstubs.return_errno;
-  concurrency = Cstubs.lwt_jobs;
-  headers = "#include <dirent.h>\n";
-  bindings = (module Unix_dirent_bindings.C);
-  prefix = "unix_dirent_lwt_";
-}
-
-let configuration = ref standard_configuration
-let ml_file = ref ""
-let c_file = ref ""
-
-let argspec : (Arg.key * Arg.spec * Arg.doc) list = [
-  "--ml-file", Arg.Set_string ml_file, "set the ML output file";
-  "--c-file", Arg.Set_string c_file, "set the C output file";
-  "--lwt-bindings", Arg.Unit (fun () -> configuration := lwt_configuration),
-  "generate Lwt jobs bindings";
-]
-
-let () =
-  let () = Arg.parse argspec failwith "" in
-  if !ml_file = "" || !c_file = "" then
-    failwith "Both --ml-file and --c-file arguments must be supplied";
-  let {errno; concurrency; headers; bindings; prefix} = !configuration in
-  let stubs_oc = open_out !c_file in
-  let fmt = Format.formatter_of_out_channel stubs_oc in
-  Format.fprintf fmt "%s@." headers;
-  Cstubs.write_c ~errno ~concurrency fmt ~prefix (module Unix_dirent_bindings.C);
-  close_out stubs_oc;
-
-  let generated_oc = open_out !ml_file in
-  let fmt = Format.formatter_of_out_channel generated_oc in
-  Cstubs.write_ml ~errno ~concurrency fmt ~prefix (module Unix_dirent_bindings.C);
-  close_out generated_oc
+let () = Ctypes_stub_generator.main
+    [ { Ctypes_stub_generator.name = "unix";
+        errno = Cstubs.return_errno;
+        concurrency = Cstubs.sequential;
+        headers = "#include <dirent.h>\n#include \"unix_dirent_util.h\"";
+        bindings = (module Unix_dirent_bindings.C); };
+      
+      { Ctypes_stub_generator.name = "lwt";
+        errno = Cstubs.return_errno;
+        concurrency = Cstubs.lwt_jobs;
+        headers = "#include <dirent.h>\n";
+        bindings = (module Unix_dirent_bindings.C); } ]

@@ -49,3 +49,12 @@ module C(F: Cstubs.FOREIGN) = struct
     F.(foreign "closedir" (dir_handle @-> returning int))
 
 end
+
+module Prefixed_C(F: Cstubs.FOREIGN) =
+struct
+  include C
+      (struct
+        include F
+        let foreign f = F.foreign ("unix_dirent_"^ f)
+      end)
+end

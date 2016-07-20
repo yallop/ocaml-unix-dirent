@@ -1,1 +1,2 @@
 <*.{ml,byte,native}>: package(ctypes.stubs), package(unix-type-representations)
+<*.{ml,byte,native}>: package(ctypes-build.stub-generator)

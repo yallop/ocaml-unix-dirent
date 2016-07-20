@@ -18,6 +18,7 @@ remove: [make "uninstall"]
 depends: [
   "ocamlfind" {build}
   "ocamlbuild" {build}
+  "ctypes-build" {build}
   "alcotest" {test}
   "base-bytes"
 ]
